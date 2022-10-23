@@ -246,6 +246,7 @@ class WorkspacesBar extends PanelMenu.Button {
 			ws_box.set_child(ws_box_label);
 
 			ws_box.connect('button-release-event', (widget, event) => this._toggle_ws(widget, event, ws_index));
+			ws_box.connect('scroll-event', (widget, event) => this._scroll_ws(widget, event));
 
         	this.ws_bar.add_child(ws_box);
 	        
@@ -353,7 +354,23 @@ class WorkspacesBar extends PanelMenu.Button {
 			Main.overview.show();
 		}
     }
-    
+
+    _scroll_ws(widget, event) {
+      const direction = getScrollDirection(event);
+      if (!direction) return;
+
+      if (Main.overview.visible) {
+        return Main.overview.hide();
+      }
+
+      this.window_tooltip.hide();
+
+      const current_ws_index = WM.get_active_workspace_index();
+      const len = this.ws_count;
+      const next_index = Math.max(0, Math.min(len, current_ws_index + direction));
+      WM.get_workspace_by_index(next_index).activate(global.get_current_time());
+    }
+
     _on_button_hover(w_box, window_title) {
 		if (window_title && w_box && w_box.get_hover()) {
 			this.window_tooltip.set_position(w_box.get_transformed_position()[0], Main.layoutManager.primaryMonitor.y + Main.panel.height + TOOLTIP_VERTICAL_PADDING);
@@ -608,4 +625,16 @@ class Extension {
 
 function init() {
 	return new Extension();
+}
+
+function getScrollDirection(event) {
+  switch (event.get_scroll_direction()) {
+    case Clutter.ScrollDirection.UP:
+    case Clutter.ScrollDirection.LEFT:
+      return -1;
+
+    case Clutter.ScrollDirection.DOWN:
+    case Clutter.ScrollDirection.RIGHT:
+      return 1;
+  }
 }
